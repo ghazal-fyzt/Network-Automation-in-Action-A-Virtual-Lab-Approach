@@ -4,10 +4,6 @@ import curses
 import ipaddress
 import os
 import subprocess
-
-########################################
-# Logging Setup for Phase 1 and Phase 2
-########################################
 import logging
 
 # ------------------ Phase 1 Logger ------------------ #
@@ -23,7 +19,7 @@ phase1_logger.addHandler(phase1_file_handler)
 phase2_logger = logging.getLogger("phase2_logger")
 phase2_logger.setLevel(logging.INFO)
 phase2_formatter = logging.Formatter('%(asctime)s %(levelname)s:%(message)s')
-phase2_file_handler = logging.FileHandler('phase2_nftables.log')
+phase2_file_handler = logging.FileHandler('phase2.log')
 phase2_file_handler.setLevel(logging.INFO)
 phase2_file_handler.setFormatter(phase2_formatter)
 phase2_logger.addHandler(phase2_file_handler)
@@ -115,9 +111,9 @@ def run_command(cmd):
     with open(os.devnull, 'w') as devnull:
         subprocess.check_call(cmd, stdout=devnull, stderr=devnull)
 
-##############################################
-# Phase 1: Network Configuration (Logging)   #
-##############################################
+##################################
+# Phase 1: Network Configuration #
+##################################
 
 def validate_ip(ip_str):
     """Check if ip_str is a valid IPv4 address."""
@@ -137,9 +133,6 @@ def route_exists(destination_cidr, gateway, interface_name):
     route_line = f"{destination_cidr} via {gateway} dev {interface_name}"
     return route_line in output
 
-########################################
-# Phase 1 Implementation: DNS, IP, etc.
-########################################
 
 def add_route_temporary(interface_name, destination_cidr, gateway):
     cmd = ['ip', 'route', 'add', destination_cidr, 'via', gateway, 'dev', interface_name]
@@ -792,7 +785,7 @@ def icmp_rule_form(screen):
         if action is None:
             return
 
-    # Drop 'ip protocol icmp', just use 'icmp type'
+
     rule = f"ip saddr {src} ip daddr {dst} icmp type {icmp_type} {action}"
     apply_nft_rule(screen, rule, nat=False)
 
@@ -896,10 +889,10 @@ def nftables_menu(screen):
 def main_menu(screen):
     selected = 0
     options = [
-        "Network Configuration (Phase 1)",
-        "Nftables Management (Phase 2)",
-        "Open vSwitch Management (Phase 3 Placeholder)",
-        "Network Monitoring (Phase 4 Placeholder)",
+        "Network Configuration ",
+        "Nftables Management ",
+        "Open vSwitch Management ",
+        "Network Monitoring ",
         "Exit"
     ]
     while True:
