@@ -922,7 +922,31 @@ def check_ovs_installed():
         except Exception as e:
             phase3_logger.error(f"Failed to install openvswitch-switch: {e}")
             return False
-       
+        
+def bridge_exists(bridge_name):
+    """
+    Return True if the specified OVS bridge exists, False otherwise.
+    Uses 'ovs-vsctl br-exists' which returns 0 if the bridge exists, 2 if not.
+    """
+    try:
+        subprocess.check_call(["ovs-vsctl", "br-exists", bridge_name])
+        return True
+    except subprocess.CalledProcessError:
+        return False
+    
+def port_exists_in_bridge(bridge_name, port_name):
+    """
+    Return True if 'port_name' is a port on 'bridge_name', False otherwise.
+    """
+    try:
+        output = subprocess.check_output(["ovs-vsctl", "list-ports", bridge_name],
+                                         universal_newlines=True).strip()
+        ports = output.split('\n')
+        return port_name in ports
+    except subprocess.CalledProcessError:
+        # If 'bridge_name' doesn't exist or other error, return False
+        return False
+      
 def add_ovs_bridge(bridge_name):
     """
     Create a new OVS bridge using 'ovs-vsctl add-br'.
@@ -932,22 +956,47 @@ def add_ovs_bridge(bridge_name):
 
 def delete_ovs_bridge(bridge_name):
     """
-    Delete an OVS bridge using 'ovs-vsctl del-br'.
+    Delete an OVS bridge if it exists, otherwise show an error.
     """
+    if not bridge_exists(bridge_name):
+        phase3_logger.error(f"Bridge '{bridge_name}' does not exist.")
+        raise ValueError(f"Bridge '{bridge_name}' does not exist.")
+    
     run_cmd(["ovs-vsctl", "del-br", bridge_name])
     phase3_logger.info(f"Deleted OVS Bridge: {bridge_name}")
 
+
 def add_port_to_bridge(bridge_name, port_name):
     """
-    Add a port (an interface) to an OVS bridge.
+    Add a port to an OVS bridge, checking if both bridge and port exist.
     """
+    if not bridge_exists(bridge_name):
+        phase3_logger.error(f"Cannot add port to non-existent bridge '{bridge_name}'.")
+        raise ValueError(f"Bridge '{bridge_name}' does not exist.")
+    
+    # For verifying if the port (interface) even exists on the system (like 'eth2')
+    # We can do a quick check with 'ip link show <port_name>'
+    try:
+        subprocess.check_call(["ip", "link", "show", port_name])
+    except subprocess.CalledProcessError:
+        phase3_logger.error(f"Port (interface) '{port_name}' does not exist in the system.")
+        raise ValueError(f"Port (interface) '{port_name}' does not exist on this system.")
+    
     run_cmd(["ovs-vsctl", "add-port", bridge_name, port_name])
     phase3_logger.info(f"Added port {port_name} to bridge {bridge_name}")
 
 def remove_port_from_bridge(bridge_name, port_name):
     """
-    Remove a port from an OVS bridge.
+    Remove a port from a bridge, ensuring both exist first.
     """
+    if not bridge_exists(bridge_name):
+        phase3_logger.error(f"Bridge '{bridge_name}' does not exist.")
+        raise ValueError(f"Bridge '{bridge_name}' does not exist.")
+    
+    if not port_exists_in_bridge(bridge_name, port_name):
+        phase3_logger.error(f"Port '{port_name}' is not on bridge '{bridge_name}'.")
+        raise ValueError(f"Port '{port_name}' not found on bridge '{bridge_name}'.")
+
     run_cmd(["ovs-vsctl", "del-port", bridge_name, port_name])
     phase3_logger.info(f"Removed port {port_name} from bridge {bridge_name}")
 
@@ -967,42 +1016,47 @@ def bring_port_down(port_name):
 
 def set_port_trunk(port_name, vlan_list):
     """
-    Set a port to trunk mode, allowing multiple VLANs.
-    'vlan_list' could be '10,20,30' or '1-4094', etc.
-    This method uses OVS's 'tag=0' if needed or uses trunk syntax.
-    For example:
-        ovs-vsctl set port <port_name> trunks=10,20,30
+    Switch port to trunk mode by removing 'tag' and setting 'trunks'.
+    Example: trunks=10,20,30
     """
-    cmd = ["ovs-vsctl", "set", "port", port_name, f"trunks={vlan_list}"]
-    run_cmd(cmd)
-    phase3_logger.info(f"Set port {port_name} as trunk with VLANs {vlan_list}")
+    # First remove 'tag' if any
+    run_cmd(["ovs-vsctl", "remove", "port", port_name, "tag"])
+    # Then set trunk
+    run_cmd(["ovs-vsctl", "set", "port", port_name, f"trunks={vlan_list}"])
+    phase3_logger.info(f"Set port {port_name} as trunk with VLANs: {vlan_list}")
 
 def set_port_access(port_name, vlan_id):
     """
-    Set a port to access mode for a single VLAN.
-    E.g.: 
-        ovs-vsctl set port <port_name> tag=10
+    Switch port to access mode by removing 'trunks' config and setting 'tag'.
     """
-    cmd = ["ovs-vsctl", "set", "port", port_name, f"tag={vlan_id}"]
-    run_cmd(cmd)
+    # Remove any trunk config
+    run_cmd(["ovs-vsctl", "remove", "port", port_name, "trunks"])
+    # Then set access tag
+    run_cmd(["ovs-vsctl", "set", "port", port_name, f"tag={vlan_id}"])
     phase3_logger.info(f"Set port {port_name} as access on VLAN {vlan_id}")
 
 def configure_ip_on_vlan_interface(vlan_interface, ip_address, subnet_mask):
     """
-    Configure IP on a VLAN interface, e.g. 'ip link add link <bridge> name <vlan_if> type vlan id <vlan_id>'
-    But typically with OVS, you'd do an internal port. Then set IP with:
-        ip addr add <ip>/<mask> dev <vlan_if>
-    We'll assume the internal port is already created, and user just wants to set IP.
+    Validate that 'vlan_interface' exists, then assign IP.
     """
+    # Check if the interface exists at OS level:
+    try:
+        subprocess.check_call(["ip", "link", "show", vlan_interface])
+    except subprocess.CalledProcessError:
+        phase3_logger.error(f"VLAN interface '{vlan_interface}' not found.")
+        raise ValueError(f"VLAN interface '{vlan_interface}' does not exist.")
+
     cidr = f"{ip_address}/{subnet_mask}"
     run_cmd(["ip", "addr", "flush", "dev", vlan_interface])
     run_cmd(["ip", "addr", "add", cidr, "dev", vlan_interface])
     run_cmd(["ip", "link", "set", vlan_interface, "up"])
     phase3_logger.info(f"Configured {vlan_interface} with IP {cidr}")
 
+
 ############################
 # Phase 3 TUI Menus        #
 ############################
+
 
 def add_ovs_bridge_form(screen):
     """
@@ -1017,6 +1071,7 @@ def add_ovs_bridge_form(screen):
     except Exception as e:
         phase3_logger.error(f"Error creating bridge {br}: {e}")
         message_box(screen, f"Error creating bridge:\n{e}")
+        
 
 def delete_ovs_bridge_form(screen):
     """
