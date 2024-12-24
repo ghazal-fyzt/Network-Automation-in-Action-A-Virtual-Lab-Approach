@@ -28,7 +28,7 @@ phase2_logger.addHandler(phase2_file_handler)
 phase3_logger = logging.getLogger("phase3_logger")
 phase3_logger.setLevel(logging.INFO)
 formatter = logging.Formatter('%(asctime)s %(levelname)s:%(message)s')
-file_handler = logging.FileHandler('phase3_ovs.log')
+file_handler = logging.FileHandler('phase3.log')
 file_handler.setFormatter(formatter)
 phase3_logger.addHandler(file_handler)
 
@@ -899,7 +899,30 @@ def run_cmd(cmd):
     """
     with open(os.devnull, 'w') as devnull:
         subprocess.check_call(cmd, stdout=devnull, stderr=devnull)
-        
+def check_ovs_installed():
+    """
+    Check if OVS (ovs-vsctl) is installed on the system.
+    If not, attempt to install 'openvswitch-switch' quietly.
+    Returns True if installed or installed successfully, False if it fails.
+    """
+    try:
+        # 'which ovs-vsctl' will raise CalledProcessError if not found
+        subprocess.check_output(["which", "ovs-vsctl"], stderr=subprocess.STDOUT)
+        # If we get here, OVS is already installed
+        phase3_logger.info("OVS is already installed on this system.")
+        return True
+    except subprocess.CalledProcessError:
+        # Not installed, let's install
+        phase3_logger.info("OVS is not installed. Attempting to install openvswitch-switch.")
+        try:
+            run_command(["apt-get", "update"])
+            run_command(["apt-get", "install", "-y", "openvswitch-switch"])
+            phase3_logger.info("Successfully installed openvswitch-switch.")
+            return True
+        except Exception as e:
+            phase3_logger.error(f"Failed to install openvswitch-switch: {e}")
+            return False
+       
 def add_ovs_bridge(bridge_name):
     """
     Create a new OVS bridge using 'ovs-vsctl add-br'.
@@ -1150,8 +1173,13 @@ def configure_ip_for_vlan_interface_form(screen):
 
 def ovs_management_menu(screen):
     """
-    Phase 3: Open vSwitch Management TUI
+    Phase 3 TUI for OVS management.
     """
+    # 1) Check if OVS installed
+    if not check_ovs_installed():
+        message_box(screen, "Failed to install Open vSwitch.\nCannot proceed with OVS management.")
+        return
+
     selected = 0
     options = [
         "Add OVS Bridge",
