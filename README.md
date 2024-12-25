@@ -55,8 +55,10 @@ ________________________________________
 Project Goals and Challenges
 Holistic Network Management:
 The combined phases produce a solution that moves from a manually configured virtual LAN environment (Phase 1) to a fully interactive, TUI-based tool (Phase 2). Users can not only set up their network with stable foundations but also manage, secure, and visualize it in real-time.
+
 Automation and User-Friendly Approach:
 Both phases emphasize simplification and automation. Phase 1 reduced complexity in configuring basic network settings, while Phase 2 introduced a structured interface to handle more advanced operations. This design ethos ensures that even users without deep networking backgrounds can carry out complex tasks confidently.
+
 Flexibility and Adaptability:
 Throughout both phases, the concept of temporary vs. permanent changes, the use of templates for nftables rules, and the modular approach to OVS configuration underscore a philosophy of adaptability. The system can be tested incrementally, changes can be rolled out cautiously, and failures can be quickly identified and reverted.
 
