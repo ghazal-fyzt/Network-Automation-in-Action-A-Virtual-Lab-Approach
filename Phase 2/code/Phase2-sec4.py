@@ -5,6 +5,8 @@ import ipaddress
 import os
 import subprocess
 import logging
+import time
+from datetime import datetime
 
 # ------------------ Phase 1 Logger ------------------ #
 phase1_logger = logging.getLogger("phase1_logger")
@@ -31,6 +33,14 @@ formatter = logging.Formatter('%(asctime)s %(levelname)s:%(message)s')
 file_handler = logging.FileHandler('phase3.log')
 file_handler.setFormatter(formatter)
 phase3_logger.addHandler(file_handler)
+
+# ------------------ Phase 4 Logger ------------------ #
+phase4_logger = logging.getLogger("phase4_logger")
+phase4_logger.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s %(levelname)s:%(message)s')
+file_handler = logging.FileHandler('phase4.log')
+file_handler.setFormatter(formatter)
+phase4_logger.addHandler(file_handler)
 
 ##############################################
 # Common Helper Functions (Printing, Input)  #
@@ -1105,17 +1115,11 @@ def set_port_trunk(port_name, vlan_list):
 def set_port_access(port_name, vlan_id):
     """
     Switch port to access mode by removing 'trunks' config and setting 'tag'.
+    Now uses '--if-exists remove' to avoid non-zero exit if no trunk existed.
     """
-    # Remove any trunk config
-    run_cmd(["ovs-vsctl", "remove", "port", port_name, "trunks"])
-    # Then set access tag
+    run_cmd(["ovs-vsctl", "--if-exists", "remove", "port", port_name, "trunks"])
     run_cmd(["ovs-vsctl", "set", "port", port_name, f"tag={vlan_id}"])
     phase3_logger.info(f"Set port {port_name} as access on VLAN {vlan_id}")
-
-
-############################
-# Configuring VLAN IP
-############################
 
 def configure_ip_on_vlan_interface(vlan_interface, ip_address, subnet_mask):
     """
@@ -1336,17 +1340,29 @@ def set_port_access_form(screen):
         message_box(screen, f"Error:\n{e}")
 
 def configure_ip_for_vlan_interface_form(screen):
-    """
-    Ask user for the VLAN interface name, IP, and subnet mask.
-    Then call configure_ip_on_vlan_interface.
-    """
-    vlan_if = input_box(screen, "Enter VLAN interface name (e.g. vlan10 or br0.10):")
+    vlan_if = input_box(screen, "Enter VLAN interface name (e.g. 'br0.20' or 'vlan20'):")
     if vlan_if is None:
+        return
+
+    # If user typed just an integer, this is not a valid interface name.
+    # You can either:
+    # 1) Reject it:
+    # if vlan_if.isdigit():
+    #     message_box(screen, "Please specify a real interface name (e.g. br0.20).")
+    #     return
+    #
+    # or 2) auto-create it (advanced logic)...
+
+    if not interface_exists(vlan_if):
+        phase3_logger.error(f"Interface '{vlan_if}' does not exist.")
+        message_box(screen, f"Interface '{vlan_if}' does not exist!\n"
+                            "If you meant to create it, do so under 'Add Port' with 'type=internal'.")
         return
 
     ip_str = input_box(screen, "Enter IP Address (e.g. 192.168.10.5):")
     if ip_str is None:
         return
+    # Validate IP
     try:
         ipaddress.IPv4Address(ip_str)
     except:
@@ -1901,9 +1917,329 @@ def ovs_management_menu(screen):
         elif key == 27:
             break
 
+##############################
+# Phase 4: Network Monitoring
+##############################
+
+def get_interfaces():
+    """
+    Return a list of network interfaces on the system by reading /sys/class/net.
+    """
+    return os.listdir('/sys/class/net')
+
+def interface_is_up(iface):
+    """
+    Return True if 'iface' is UP, False otherwise, by checking 'cat /sys/class/net/iface/operstate'.
+    """
+    try:
+        with open(f"/sys/class/net/{iface}/operstate", "r") as f:
+            state = f.read().strip()
+            return (state == "up")
+    except Exception as e:
+        phase4_logger.error(f"Error reading state for {iface}: {e}")
+        return False
+
+def get_interface_type(iface):
+    """
+    Guess interface type: physical or virtual. 
+    A simple approach: if /sys/class/net/<iface>/device exists, assume physical.
+    If not, assume virtual. 
+    """
+    dev_path = f"/sys/class/net/{iface}/device"
+    if os.path.exists(dev_path):
+        return "physical"
+    else:
+        return "virtual"
+
+def get_link_speed(iface):
+    """
+    Attempt to read link speed from /sys/class/net/<iface>/speed (some drivers support this).
+    If not supported, return 'unknown'.
+    """
+    speed_path = f"/sys/class/net/{iface}/speed"
+    if os.path.exists(speed_path):
+        try:
+            with open(speed_path, "r") as f:
+                speed_val = f.read().strip()
+                return speed_val + " Mb/s"
+        except Exception as e:
+            phase4_logger.warning(f"Cannot read link speed for {iface}: {e}")
+            return "unknown"
+    return "unknown"
+
+def get_ip_addresses(iface):
+    """
+    Return a list of IP addresses (v4) assigned to 'iface' using 'ip -4 addr show <iface>'.
+    """
+    ips = []
+    try:
+        output = subprocess.check_output(["ip", "-4", "addr", "show", iface],
+                                         universal_newlines=True)
+        for line in output.splitlines():
+            line=line.strip()
+            if line.startswith("inet "):
+                # example: 'inet 192.168.1.10/24 brd 192.168.1.255 scope global dynamic noprefixroute ens33'
+                parts = line.split()
+                if len(parts) >= 2:
+                    ip_cidr = parts[1]  # e.g. 192.168.1.10/24
+                    ips.append(ip_cidr)
+    except subprocess.CalledProcessError as cpe:
+        phase4_logger.error(f"Error reading IP addresses for {iface}: {cpe}")
+    return ips
+
+def get_protocol_stats():
+    """
+    Return a dict of TCP/UDP stats from /proc/net/snmp or 'ss' command.
+    For simplicity, we parse /proc/net/snmp for basic 'Tcp:' and 'Udp:' lines.
+    """
+    stats = {"tcp_established": 0, "tcp_listen": 0,
+             "udp_in_datagrams": 0, "udp_out_datagrams": 0}
+    # Attempt to parse /proc/net/snmp
+    try:
+        with open("/proc/net/snmp", "r") as f:
+            for line in f:
+                line = line.strip()
+                # For TCP line might be: "Tcp: RtoAlgorithm RtoMin RtoMax ..."
+                if line.startswith("Tcp:"):
+                    # read the next line for actual values? or parse the same line?
+                    # Actually /proc/net/snmp has two lines for each protocol:
+                    #   - a header
+                    #   - a data line
+                    pass
+        # Alternatively, use 'ss -t -a' to count established or 'ss -u' for UDP, etc.
+        # We'll do a simpler approach using 'ss' below
+    except Exception as e:
+        phase4_logger.error(f"Error reading /proc/net/snmp: {e}")
+
+    # We'll do a quick approach with 'ss':
+    try:
+        # count tcp established
+        tcp_est_out = subprocess.check_output(["ss", "-t", "-a", "-n", "state", "established"],
+                                              universal_newlines=True)
+        # first line is a header, subsequent lines are connections
+        lines = tcp_est_out.strip().split("\n")
+        if len(lines) > 1:
+            stats["tcp_established"] = len(lines) - 1
+    except subprocess.CalledProcessError:
+        pass
+    # count tcp listening
+    try:
+        tcp_listen_out = subprocess.check_output(["ss", "-t", "-a", "-n", "state", "listening"],
+                                                 universal_newlines=True)
+        lines = tcp_listen_out.strip().split("\n")
+        if len(lines) > 1:
+            stats["tcp_listen"] = len(lines) - 1
+    except subprocess.CalledProcessError:
+        pass
+    # for UDP, let's just do 'ss -u -a'
+    try:
+        udp_out = subprocess.check_output(["ss", "-u", "-a", "-n"],
+                                          universal_newlines=True)
+        lines = udp_out.strip().split("\n")
+        if len(lines) > 1:
+            # This is a simplistic measure of open UDP sockets
+            stats["udp_in_datagrams"] = len(lines) - 1
+    except subprocess.CalledProcessError:
+        pass
+
+    return stats
+
+def get_bytes_packets(iface):
+    """
+    Return (rx_bytes, rx_packets, tx_bytes, tx_packets) for 'iface'
+    from /sys/class/net/<iface>/statistics.
+    """
+    base_path = f"/sys/class/net/{iface}/statistics"
+    try:
+        with open(os.path.join(base_path, "rx_bytes"), "r") as f:
+            rx_b = int(f.read().strip())
+        with open(os.path.join(base_path, "rx_packets"), "r") as f:
+            rx_p = int(f.read().strip())
+        with open(os.path.join(base_path, "tx_bytes"), "r") as f:
+            tx_b = int(f.read().strip())
+        with open(os.path.join(base_path, "tx_packets"), "r") as f:
+            tx_p = int(f.read().strip())
+        return (rx_b, rx_p, tx_b, tx_p)
+    except Exception as e:
+        phase4_logger.error(f"Error reading stats for {iface}: {e}")
+        return (0, 0, 0, 0)
+
+
+#################################
+# TUI: Phase 4 Monitoring Menu  #
+#################################
+
+def view_interface_info(screen):
+    """
+    Display name, status, type, link speed, and IP addresses for each interface.
+    """
+    interfaces = get_interfaces()
+    screen.clear()
+    screen.border(0)
+    max_y, max_x = screen.getmaxyx()
+    print_wrapped(screen, 1, 2, "Interfaces Information (Press any key to return)", max_x - 4)
+    y = 3
+    for iface in interfaces:
+        up_down = "UP" if interface_is_up(iface) else "DOWN"
+        iface_type = get_interface_type(iface)
+        speed = get_link_speed(iface)
+        ips = get_ip_addresses(iface)
+
+        line1 = f"{iface:10s}  {up_down:4s}  {iface_type:8s}  {speed:8s}"
+        print_wrapped(screen, y, 2, line1, max_x - 4)
+        y += 1
+        if ips:
+            for ipaddr in ips:
+                print_wrapped(screen, y, 4, f"IP: {ipaddr}", max_x - 6)
+                y += 1
+        else:
+            print_wrapped(screen, y, 4, "No IPv4 assigned", max_x - 6)
+            y += 1
+        y += 1
+        if y >= max_y - 1:
+            break
+
+    screen.refresh()
+    screen.getch()  # Wait for user to press a key
+
+def view_protocol_stats(screen):
+    """
+    Display stats about TCP/UDP using get_protocol_stats.
+    """
+    stats = get_protocol_stats()
+    screen.clear()
+    screen.border(0)
+    max_y, max_x = screen.getmaxyx()
+    line1 = "Network Protocol Statistics"
+    print_wrapped(screen, 1, 2, line1, max_x - 4)
+    y = 3
+    print_wrapped(screen, y, 2, f"TCP Established: {stats['tcp_established']}", max_x - 4)
+    y += 1
+    print_wrapped(screen, y, 2, f"TCP Listening:   {stats['tcp_listen']}", max_x - 4)
+    y += 2
+    # 'udp_in_datagrams' is just how many open sockets we found from 'ss -u'
+    print_wrapped(screen, y, 2, f"UDP Sockets Found: {stats['udp_in_datagrams']}", max_x - 4)
+    y += 2
+    print_wrapped(screen, y, 2, "(Press any key to return)", max_x - 4)
+
+    screen.refresh()
+    screen.getch()
+
+def view_bytes_packets_info(screen):
+    """
+    Show number of bytes and packets for each interface (not real-time).
+    """
+    interfaces = get_interfaces()
+    screen.clear()
+    screen.border(0)
+    max_y, max_x = screen.getmaxyx()
+    print_wrapped(screen, 1, 2, "Interface Traffic Statistics (Press any key to return)", max_x - 4)
+    y = 3
+    for iface in interfaces:
+        rx_b, rx_p, tx_b, tx_p = get_bytes_packets(iface)
+        line = f"{iface:10s}  RX_Bytes={rx_b}  RX_Pkts={rx_p}  TX_Bytes={tx_b}  TX_Pkts={tx_p}"
+        print_wrapped(screen, y, 2, line, max_x - 4)
+        y += 1
+        if y >= max_y - 1:
+            break
+    screen.refresh()
+    screen.getch()
+
+def view_realtime_bandwidth(screen):
+    """
+    Show real-time bandwidth usage for each interface by sampling stats over 1-second intervals.
+    Press 'q' to exit.
+    """
+    interfaces = get_interfaces()
+    # We'll store previous RX/TX bytes in a dict
+    prev_stats = {}
+    for iface in interfaces:
+        rx_b, _, tx_b, _ = get_bytes_packets(iface)
+        prev_stats[iface] = (rx_b, tx_b)
+
+    screen.nodelay(True)  # non-blocking getch
+    max_y, max_x = screen.getmaxyx()
+
+    try:
+        while True:
+            # Check if user pressed 'q'
+            c = screen.getch()
+            if c == ord('q') or c == ord('Q'):
+                break
+
+            screen.clear()
+            screen.border(0)
+            print_wrapped(screen, 1, 2, "Real-time Bandwidth (press 'q' to quit)", max_x - 4)
+            y = 3
+
+            for iface in interfaces:
+                rx_b, _, tx_b, _ = get_bytes_packets(iface)
+                (old_rx, old_tx) = prev_stats.get(iface, (rx_b, tx_b))
+
+                # bytes difference over 1 second = bytes/s
+                rx_rate = rx_b - old_rx
+                tx_rate = tx_b - old_tx
+
+                # Update
+                prev_stats[iface] = (rx_b, tx_b)
+
+                line = f"{iface:10s} RX={rx_rate} B/s  TX={tx_rate} B/s"
+                print_wrapped(screen, y, 2, line, max_x - 4)
+                y += 1
+                if y >= max_y - 1:
+                    break
+
+            screen.refresh()
+            time.sleep(1.0)  # 1-second interval
+    except Exception as e:
+        phase4_logger.error(f"Error in real-time bandwidth monitor: {e}")
+        message_box(screen, f"Error:\n{e}")
+    finally:
+        screen.nodelay(False)
+
+def network_monitoring_menu(screen):
+    """
+    Phase 4: Network Monitoring TUI
+    """
+    selected = 0
+    options = [
+        "View Network Interfaces Information",
+        "View Network Bandwidth in Real-time",
+        "View Network Protocol Statistics (TCP/UDP)",
+        "View Bytes/Packets for Interfaces",
+        "Back to Main Menu"
+    ]
+    while True:
+        screen.clear()
+        screen.border(0)
+        max_y, max_x = screen.getmaxyx()
+        print_wrapped(screen, 2, 2, "Network Monitoring Dashboard Menu (ESC to go back)", max_x - 4)
+
+        for idx, opt in enumerate(options):
+            prefix = "> " if idx == selected else "  "
+            print_wrapped(screen, 4+idx, 2, prefix + opt, max_x - 4)
+
+        key = screen.getch()
+        if key == curses.KEY_UP and selected > 0:
+            selected -= 1
+        elif key == curses.KEY_DOWN and selected < len(options) - 1:
+            selected += 1
+        elif key in (10, 13):
+            if selected == 0:
+                view_interface_info(screen)
+            elif selected == 1:
+                view_realtime_bandwidth(screen)
+            elif selected == 2:
+                view_protocol_stats(screen)
+            elif selected == 3:
+                view_bytes_packets_info(screen)
+            elif selected == 4:
+                break
+        elif key == 27:
+            break
 
 ###############################
-# Main Menu (Phases 1 & 2 & 3)
+# Main Menu (Phases 1 & 2 & 3 & 4)
 ###############################
 
 def main_menu(screen):
@@ -1912,7 +2248,7 @@ def main_menu(screen):
         "Network Configuration",  # Phase 1
         "Nftables Management",    # Phase 2
         "Open vSwitch Management",# Phase 3
-        "Network Monitoring",     # Phase 4 placeholder
+        "Network Monitoring",     # Phase 4 
         "Exit"
     ]
     while True:
@@ -1932,16 +2268,16 @@ def main_menu(screen):
         elif key in [10, 13]:
             if selected == 0:
                 # Phase 1: network_configuration_menu(screen)
-                pass  # or call network_configuration_menu(screen) if you have it
+                network_configuration_menu(screen)
             elif selected == 1:
                 # Phase 2: nftables_menu(screen)
-                pass  # or call nftables_menu(screen) if you have it
+                nftables_menu(screen)
             elif selected == 2:
                 # Phase 3: OVS management
                 ovs_management_menu(screen)
             elif selected == 3:
-                # Phase 4: placeholder
-                message_box(screen, "Phase 4: Network Monitoring - Not Implemented")
+                # Phase 4: Network Monitoring
+                network_monitoring_menu(screen)
             elif selected == 4:
                 break
         elif key == 27:  # ESC
