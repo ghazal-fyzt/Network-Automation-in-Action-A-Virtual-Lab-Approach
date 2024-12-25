@@ -1,4 +1,5 @@
 Overview
+
 This project is composed of two major phases that collectively aim to simplify, automate, and enhance the management of network configurations, firewall rules, virtual switching, and network monitoring on Linux systems. Initially, it was developed to address the complexities associated with establishing, configuring, and maintaining a virtualized multi-segment LAN environment. Building upon these foundations, the second phase broadens the scope by introducing a text-based user interface (TUI) and Python-driven functionalities that streamline interaction with network settings, firewall rules (via nftables), Open vSwitch (OVS) components, and real-time network monitoring data.
 The primary objective is to provide administrators and users, even those with limited networking experience, with a command line tool that both reduces manual interventions and fosters a clear understanding of the system’s network state. The resulting tool features menus, submenus, and structured workflows that guide users through configuration steps, ultimately delivering comprehensive network management capabilities.
 ________________________________________
