@@ -199,10 +199,9 @@ def use_dhcp(interface_name):
     run_command(['nmcli', 'connection', 'modify', interface_name, 'ipv4.method', 'auto'])
     run_command(['nmcli', 'connection', 'up', interface_name])
 
-################################
-# Phase 1: TUI Menu and Forms  #
-################################
-
+#################
+# Phase 1: TUI  #
+#################
 import curses
 
 phase1_logger = logging.getLogger("phase1_logger")

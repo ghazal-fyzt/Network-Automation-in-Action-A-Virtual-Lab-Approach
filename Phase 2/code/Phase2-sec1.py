@@ -1,14 +1,10 @@
-#!/usr/bin/env python3
-
 import curses
 import ipaddress
 import os
 import subprocess
 import logging
 
-##############################
-# Logging for Phase 1
-##############################
+# ------------------ Phase 1 Logger ------------------ #
 phase1_logger = logging.getLogger("phase1_logger")
 phase1_logger.setLevel(logging.INFO)
 p1_formatter = logging.Formatter('%(asctime)s %(levelname)s:%(message)s')
@@ -154,9 +150,9 @@ def use_dhcp(interface_name):
     run_command(['nmcli', 'connection', 'modify', interface_name, 'ipv4.method', 'auto'])
     run_command(['nmcli', 'connection', 'up', interface_name])
 
-##############################
-# Phase 1 TUI
-##############################
+#################
+# Phase 1 TUI   #
+#################
 
 def select_interface(screen):
     interfaces = get_network_interfaces()

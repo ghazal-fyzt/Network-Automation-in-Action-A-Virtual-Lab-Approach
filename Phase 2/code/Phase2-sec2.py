@@ -6,6 +6,7 @@ import os
 import subprocess
 import logging
 
+# ------------------ Phase 2 Logger ------------------ #
 phase2_logger = logging.getLogger("phase2_logger")
 phase2_logger.setLevel(logging.INFO)
 p2_formatter = logging.Formatter('%(asctime)s %(levelname)s:%(message)s')
