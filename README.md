@@ -3,6 +3,7 @@ This project is composed of two major phases that collectively aim to simplify, 
 The primary objective is to provide administrators and users, even those with limited networking experience, with a command line tool that both reduces manual interventions and fosters a clear understanding of the system’s network state. The resulting tool features menus, submenus, and structured workflows that guide users through configuration steps, ultimately delivering comprehensive network management capabilities.
 ________________________________________
 Phase 1: Foundational Network Configuration
+
 The first phase focuses on establishing a robust and efficient network configuration layer in a virtualized environment. Central to this phase is the setup of Ubuntu-based routing, NAT, DHCP, and DNS services, as well as ensuring that clients (Windows Server, Windows 10, and Ubuntu clients) integrate seamlessly into the network. Key achievements in Phase 1 include:
 •	Network Topology & LAN Segments:
 Creation of multiple LAN segments in a virtual environment (e.g., VMware) to simulate a realistic and isolated network. This architecture allows in-depth testing of routing behavior and address assignments without external interference.
@@ -17,6 +18,7 @@ All configurations—DNS, hostname, static IP, DHCP activation, and route additi
 The main challenge of Phase 1 lay in orchestrating these components without human error, ensuring that all modifications (from DNS updates to NAT rules) integrate smoothly. This phase established the bedrock upon which advanced management and visualization tools could be built.
 ________________________________________
 Phase 2: Advanced Management and Text-based User Interface (TUI)
+
 Building on the foundational network configuration laid out in Phase 1, Phase 2 introduces a command line TUI written in Python that organizes and controls complex networking tasks into four main areas:
 1.	Network Configuration Management
 The TUI simplifies the setting of DNS, hostname, static IP, DHCP usage, and routing (both adding and removing routes) through a structured menu system:
@@ -39,6 +41,7 @@ This phase includes a real-time network monitoring dashboard:
 o	Displays interface states, bandwidth usage, and protocol-level statistics (TCP/UDP).
 o	Shows assigned IP addresses per interface.
 o	Offers immediate visibility into network health, traffic patterns, and potential issues without requiring deep command-line expertise.
+
 The Phase 2 TUI menus are structured as follows:
 Main Menu:
 1.	Network Configuration
