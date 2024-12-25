@@ -54,7 +54,8 @@ Each submenu provides intuitive options for operations like changing DNS, settin
 This phase’s primary challenge lies in ensuring that each function works reliably and transparently. For example, when establishing NAT rules with nftables, the interface’s IP used for NAT must be accurately identified. The TUI and internal logic must thoroughly test these rules to guarantee correct behavior, preserving connectivity and security.
 ________________________________________
 Project Goals and Challenges
-Holistic Network Management:
+
+Network Management:
 The combined phases produce a solution that moves from a manually configured virtual LAN environment (Phase 1) to a fully interactive, TUI-based tool (Phase 2). Users can not only set up their network with stable foundations but also manage, secure, and visualize it in real-time.
 
 Automation and User-Friendly Approach:
