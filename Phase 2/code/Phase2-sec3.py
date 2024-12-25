@@ -1105,17 +1105,11 @@ def set_port_trunk(port_name, vlan_list):
 def set_port_access(port_name, vlan_id):
     """
     Switch port to access mode by removing 'trunks' config and setting 'tag'.
+    Now uses '--if-exists remove' to avoid non-zero exit if no trunk existed.
     """
-    # Remove any trunk config
-    run_cmd(["ovs-vsctl", "remove", "port", port_name, "trunks"])
-    # Then set access tag
+    run_cmd(["ovs-vsctl", "--if-exists", "remove", "port", port_name, "trunks"])
     run_cmd(["ovs-vsctl", "set", "port", port_name, f"tag={vlan_id}"])
     phase3_logger.info(f"Set port {port_name} as access on VLAN {vlan_id}")
-
-
-############################
-# Configuring VLAN IP
-############################
 
 def configure_ip_on_vlan_interface(vlan_interface, ip_address, subnet_mask):
     """
@@ -1336,17 +1330,29 @@ def set_port_access_form(screen):
         message_box(screen, f"Error:\n{e}")
 
 def configure_ip_for_vlan_interface_form(screen):
-    """
-    Ask user for the VLAN interface name, IP, and subnet mask.
-    Then call configure_ip_on_vlan_interface.
-    """
-    vlan_if = input_box(screen, "Enter VLAN interface name (e.g. vlan10 or br0.10):")
+    vlan_if = input_box(screen, "Enter VLAN interface name (e.g. 'br0.20' or 'vlan20'):")
     if vlan_if is None:
+        return
+
+    # If user typed just an integer, this is not a valid interface name.
+    # You can either:
+    # 1) Reject it:
+    # if vlan_if.isdigit():
+    #     message_box(screen, "Please specify a real interface name (e.g. br0.20).")
+    #     return
+    #
+    # or 2) auto-create it (advanced logic)...
+
+    if not interface_exists(vlan_if):
+        phase3_logger.error(f"Interface '{vlan_if}' does not exist.")
+        message_box(screen, f"Interface '{vlan_if}' does not exist!\n"
+                            "If you meant to create it, do so under 'Add Port' with 'type=internal'.")
         return
 
     ip_str = input_box(screen, "Enter IP Address (e.g. 192.168.10.5):")
     if ip_str is None:
         return
+    # Validate IP
     try:
         ipaddress.IPv4Address(ip_str)
     except:
