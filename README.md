@@ -33,15 +33,15 @@ Phase 2: Advanced Management and Text-based User Interface (TUI)
 Building on the foundational network configuration laid out in Phase 1, Phase 2 introduces a command line TUI written in Python that organizes and controls complex networking tasks into four main areas:
 
 1.	Network Configuration Management
-2.	
+   
 The TUI simplifies the setting of DNS, hostname, static IP, DHCP usage, and routing (both adding and removing routes) through a structured menu system:
 
 o	Users can choose to apply changes temporarily or permanently.
 
 o	The system ensures that the correct set of interfaces is selected for permanent changes, preventing configuration drift or incomplete persistent setups.
 
-4.	Firewall and NAT Management with nftables
-5.	
+2.	Firewall and NAT Management with nftables
+   
 Utilizing nftables, this phase enables the definition of firewall rules, NAT configurations, and security policies:
 
 o	Templates for common nftables rules (ct_state-based, IP-based, ICMP-based, masquerade for source NAT, and DNAT for inbound traffic) are provided.
@@ -50,8 +50,8 @@ o	This abstraction reduces complexity for less experienced users, who can select
 
 o	The TUI ensures the correctness of rules and reduces errors by guiding the user through parameter selection.
 
-7.	Open vSwitch (OVS) Management
-8.	
+3.	Open vSwitch (OVS) Management
+	
 Advanced functionalities for managing OVS bridges and ports are integrated:
 
 o	Creating and deleting OVS bridges.
@@ -64,8 +64,8 @@ o	Configuring VLANs and assigning IP addresses to VLAN interfaces.
 
 This approach addresses one of the more complex aspects of modern Linux networking—managing virtual switches and VLAN tagging—through a user-friendly interface.
 
-10.	Network Monitoring Dashboard
-11.	
+4.	Network Monitoring Dashboard
+
 This phase includes a real-time network monitoring dashboard:
 
 o	Displays interface states, bandwidth usage, and protocol-level statistics (TCP/UDP).
@@ -79,15 +79,13 @@ The Phase 2 TUI menus are structured as follows:
 Main Menu:
 
 1.	Network Configuration
-2.	
-3.	Manage Firewall (Nftables)
-4.	
-5.	Open vSwitch Management
-6.	
-7.	Network Monitoring
-8.	
-9.	Exit
-10.	
+	
+2.	Manage Firewall (Nftables)
+	
+3.	Open vSwitch Management
+
+4.	Network Monitoring
+
 Each submenu provides intuitive options for operations like changing DNS, setting static IP addresses, manipulating nftables rules (including NAT), configuring OVS, and monitoring network performance.
 
 This phase’s primary challenge lies in ensuring that each function works reliably and transparently. For example, when establishing NAT rules with nftables, the interface’s IP used for NAT must be accurately identified. The TUI and internal logic must thoroughly test these rules to guarantee correct behavior, preserving connectivity and security.
