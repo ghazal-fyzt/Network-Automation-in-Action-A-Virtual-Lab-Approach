@@ -1,0 +1,21 @@
+# This project primarily uses Python's standard libraries:
+# - curses
+# - subprocess
+# - ipaddress
+# - logging
+# - time
+# - os
+
+# No external Python packages are required.
+
+# However, if you plan to run this project on Windows, you need to install the `windows-curses` package
+# to provide support for the curses library.
+
+windows-curses; platform_system == "Windows"
+
+sudo apt-get update
+sudo apt-get install -y network-manager nftables openvswitch-switch iproute2
+python3 -m venv venv
+source venv/bin/activate
+
+
