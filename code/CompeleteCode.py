@@ -267,7 +267,6 @@ def use_dhcp(interface_name):
 #################
 # Phase 1: TUI  #
 #################
-import curses
 
 phase1_logger = logging.getLogger("phase1_logger")
 
