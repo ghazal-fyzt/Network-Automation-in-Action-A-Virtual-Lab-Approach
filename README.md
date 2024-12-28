@@ -3,9 +3,9 @@
 
 # MyProject 🚀
 
-![Build Status](https://img.shields.io/github/actions/workflow/status/ghazal-fyzt/Network-Automation-in-Action-A-Virtual-Lab-Approach/CI.yml?label=build&style=flat-square&color=orange)
-![Python Version](https://img.shields.io/badge/python-3.8%2B-darkyellow?style=flat-square)
-![Last Commit](https://img.shields.io/github/last-commit/ghazal-fyzt/Network-Automation-in-Action-A-Virtual-Lab-Approach?style=flat-square&color=red)
+![Python Version](https://img.shields.io/badge/python-3.8%2B-rgb(226,123,83)?style=flat-square)
+![Last Commit](https://img.shields.io/badge/last_commit-today-577e8f?style=flat-square)
+
 
 ## Table of Contents
 - [Overview](#overview)
