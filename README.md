@@ -1,4 +1,4 @@
-![Logo](https://github.com/ghazal-fyzt/Network-Automation-in-Action-A-Virtual-Lab-Approach/Images/logo.png)
+![Logo](https://raw.githubusercontent.com/ghazal-fyzt/Network-Automation-in-Action-A-Virtual-Lab-Approach/main/Images/logo.png)
 
 # MyProject 🚀
 
@@ -17,7 +17,7 @@
 
 ## Overview 🚀
 
-![Network Topology](https://github.com/ghazal-fyzt/Network-Automation-in-Action-A-Virtual-Lab-Approach/Images/Network-Topology.jpg)
+![Network Topology](https://raw.githubusercontent.com/ghazal-fyzt/Network-Automation-in-Action-A-Virtual-Lab-Approach/main/Images/Network-Topology.jpg)
 
 This project is composed of two major phases that collectively aim to simplify, automate, and enhance the management of network configurations, firewall rules, virtual switching, and network monitoring on Linux systems. Initially, it was developed to address the complexities associated with establishing, configuring, and maintaining a virtualized multi-segment LAN environment. Building upon these foundations, the second phase broadens the scope by introducing a text-based user interface (TUI) and Python-driven functionalities that streamline interaction with network settings, firewall rules (via nftables), Open vSwitch (OVS) components, and real-time network monitoring data. The primary objective is to provide administrators and users, even those with limited networking experience, with a command line tool that both reduces manual interventions and fosters a clear understanding of the system’s network state. The resulting tool features menus, submenus, and structured workflows that guide users through configuration steps, ultimately delivering comprehensive network management capabilities.
 
@@ -27,7 +27,7 @@ The first phase focuses on establishing a robust and efficient network configura
 
 ### 🖥️ Network Topology & LAN Segments
 - **Description:** Creation of multiple LAN segments in a virtual environment to simulate a realistic and isolated network. This architecture allows in-depth testing of routing behavior and address assignments without external interference.
-- **Visual:** Refer to the [Network Topology](https://github.com/ghazal-fyzt/Network-Automation-in-Action-A-Virtual-Lab-Approach/Images/Network-Topology.jpg) image above.
+- **Visual:** Refer to the [Network Topology](https://raw.githubusercontent.com/ghazal-fyzt/Network-Automation-in-Action-A-Virtual-Lab-Approach/main/Images/Network-Topology.jpg) image above.
 
 ### 🔄 Router Configuration
 - **Description:** An Ubuntu router was implemented as a bridging point between internal LAN segments and the external network. This router handles IP forwarding, NAT (Network Address Translation) to facilitate internet-bound traffic, and DHCP services to automate IP address assignment.
@@ -79,7 +79,7 @@ This phase includes a real-time network monitoring dashboard:
 - **Health Visibility:** Offers immediate visibility into network health, traffic patterns, and potential issues without requiring deep command-line expertise.
 
 ### 🎥 TUI Demonstration
-![TUI Demo](https://github.com/ghazal-fyzt/Network-Automation-in-Action-A-Virtual-Lab-Approach/Images/Demo.gif)
+![TUI Demo](https://raw.githubusercontent.com/ghazal-fyzt/Network-Automation-in-Action-A-Virtual-Lab-Approach/main/Images/Demo.gif)
 
 <details>
 <summary>🔍 Explore Phase 2 Features</summary>
@@ -132,4 +132,5 @@ Throughout both phases, the concept of temporary vs. permanent changes, the use 
    Follow the instructions in the Phase1/Pahse1.pdf file to configure your virtual network environment.
 
 4. **Run the TUI:**
+   
    sudo python3 CompeleteCode.py
