@@ -4,13 +4,12 @@ import os
 import subprocess
 import logging
 import time
-from datetime import datetime
 
 # ------------------ Phase 1 Logger ------------------ #
 phase1_logger = logging.getLogger("phase1_logger")
 phase1_logger.setLevel(logging.INFO)
-phase1_formatter = logging.Formatter('%(asctime)s %(levelname)s:%(message)s')
-phase1_file_handler = logging.FileHandler('phase1.log')
+phase1_formatter = logging.Formatter("%(asctime)s %(levelname)s:%(message)s")
+phase1_file_handler = logging.FileHandler("phase1.log")
 phase1_file_handler.setLevel(logging.INFO)
 phase1_file_handler.setFormatter(phase1_formatter)
 phase1_logger.addHandler(phase1_file_handler)
@@ -18,8 +17,8 @@ phase1_logger.addHandler(phase1_file_handler)
 # ------------------ Phase 2 Logger ------------------ #
 phase2_logger = logging.getLogger("phase2_logger")
 phase2_logger.setLevel(logging.INFO)
-phase2_formatter = logging.Formatter('%(asctime)s %(levelname)s:%(message)s')
-phase2_file_handler = logging.FileHandler('phase2.log')
+phase2_formatter = logging.Formatter("%(asctime)s %(levelname)s:%(message)s")
+phase2_file_handler = logging.FileHandler("phase2.log")
 phase2_file_handler.setLevel(logging.INFO)
 phase2_file_handler.setFormatter(phase2_formatter)
 phase2_logger.addHandler(phase2_file_handler)
@@ -27,16 +26,16 @@ phase2_logger.addHandler(phase2_file_handler)
 # ------------------ Phase 3 Logger ------------------ #
 phase3_logger = logging.getLogger("phase3_logger")
 phase3_logger.setLevel(logging.INFO)
-formatter = logging.Formatter('%(asctime)s %(levelname)s:%(message)s')
-file_handler = logging.FileHandler('phase3.log')
+formatter = logging.Formatter("%(asctime)s %(levelname)s:%(message)s")
+file_handler = logging.FileHandler("phase3.log")
 file_handler.setFormatter(formatter)
 phase3_logger.addHandler(file_handler)
 
 # ------------------ Phase 4 Logger ------------------ #
 phase4_logger = logging.getLogger("phase4_logger")
 phase4_logger.setLevel(logging.INFO)
-formatter = logging.Formatter('%(asctime)s %(levelname)s:%(message)s')
-file_handler = logging.FileHandler('phase4.log')
+formatter = logging.Formatter("%(asctime)s %(levelname)s:%(message)s")
+file_handler = logging.FileHandler("phase4.log")
 file_handler.setFormatter(formatter)
 phase4_logger.addHandler(file_handler)
 
@@ -44,14 +43,16 @@ phase4_logger.addHandler(file_handler)
 # Common Helper Functions (Printing, Input)  #
 ##############################################
 
+
 def print_wrapped(screen, start_y, start_x, text, max_width):
     """
     Print text at (start_y, start_x) with truncation if needed.
     Helps maintain alignment in limited terminal widths.
     """
     if len(text) > max_width:
-        text = text[:max_width-1]
+        text = text[: max_width - 1]
     screen.addstr(start_y, start_x, text)
+
 
 def message_box(screen, message):
     """
@@ -60,7 +61,7 @@ def message_box(screen, message):
     """
     screen.clear()
     screen.border(0)
-    lines = message.split('\n')
+    lines = message.split("\n")
     max_y, max_x = screen.getmaxyx()
     y = 2
     for line in lines:
@@ -69,20 +70,21 @@ def message_box(screen, message):
         print_wrapped(screen, y, 2, line, max_x - 4)
         y += 1
     if y < max_y - 2:
-        print_wrapped(screen, y+1, 2, "Press any key to continue...", max_x - 4)
+        print_wrapped(screen, y + 1, 2, "Press any key to continue...", max_x - 4)
     screen.refresh()
     screen.getch()
 
+
 def input_box(screen, prompt):
     """
-    Prompt user for input with a single line. 
+    Prompt user for input with a single line.
     Press ESC or type 'back' to return None (go back).
     """
     curses.noecho()
     screen.clear()
     screen.border(0)
     max_y, max_x = screen.getmaxyx()
-    lines = prompt.split('\n')
+    lines = prompt.split("\n")
     y = 2
     for line in lines:
         if y >= max_y - 2:
@@ -90,7 +92,7 @@ def input_box(screen, prompt):
         print_wrapped(screen, y, 2, line, max_x - 4)
         y += 1
 
-    print_wrapped(screen, y+1, 2, "(Press ESC or type 'back' to return)", max_x - 4)
+    print_wrapped(screen, y + 1, 2, "(Press ESC or type 'back' to return)", max_x - 4)
     input_y = y + 3
     input_x = 2
     screen.move(input_y, input_x)
@@ -118,18 +120,21 @@ def input_box(screen, prompt):
         else:
             if 32 <= ch <= 126:
                 buffer.append(chr(ch))
-                screen.addch(input_y, input_x + len(buffer)-1, ch)
+                screen.addch(input_y, input_x + len(buffer) - 1, ch)
+
 
 def run_command(cmd):
     """
     Run a shell command quietly, raise on failure.
     """
-    with open(os.devnull, 'w') as devnull:
+    with open(os.devnull, "w") as devnull:
         subprocess.check_call(cmd, stdout=devnull, stderr=devnull)
+
 
 ##################################
 # Phase 1: Network Configuration #
 ##################################
+
 
 def validate_ip(ip_str):
     """Check if ip_str is a valid IPv4 address."""
@@ -139,63 +144,125 @@ def validate_ip(ip_str):
     except:
         return False
 
+
 def get_network_interfaces():
     """Return list of interfaces from /sys/class/net."""
-    return os.listdir('/sys/class/net/')
+    return os.listdir("/sys/class/net/")
+
 
 def route_exists(destination_cidr, gateway, interface_name):
     """Check if a route exists in the system routing table."""
-    output = subprocess.check_output(['ip', 'route', 'show'], universal_newlines=True)
+    output = subprocess.check_output(["ip", "route", "show"], universal_newlines=True)
     route_line = f"{destination_cidr} via {gateway} dev {interface_name}"
     return route_line in output
 
 
 def add_route_temporary(interface_name, destination_cidr, gateway):
-    cmd = ['ip', 'route', 'add', destination_cidr, 'via', gateway, 'dev', interface_name]
+    cmd = [
+        "ip",
+        "route",
+        "add",
+        destination_cidr,
+        "via",
+        gateway,
+        "dev",
+        interface_name,
+    ]
     subprocess.check_call(cmd)
     if not route_exists(destination_cidr, gateway, interface_name):
         raise ValueError("Route not found after addition.")
 
+
 def add_route_permanent(interface_name, destination_cidr, gateway):
-    run_command(['nmcli', 'connection', 'modify', interface_name, '+ipv4.routes', f"{destination_cidr} {gateway}"])
-    run_command(['nmcli', 'connection', 'up', interface_name])
+    run_command(
+        [
+            "nmcli",
+            "connection",
+            "modify",
+            interface_name,
+            "+ipv4.routes",
+            f"{destination_cidr} {gateway}",
+        ]
+    )
+    run_command(["nmcli", "connection", "up", interface_name])
     if not route_exists(destination_cidr, gateway, interface_name):
         raise ValueError("Route not found after permanent addition.")
+
 
 def remove_route_temporary(interface_name, destination_cidr, gateway):
     if not route_exists(destination_cidr, gateway, interface_name):
         raise ValueError("Route does not exist.")
-    cmd = ['ip', 'route', 'del', destination_cidr, 'via', gateway, 'dev', interface_name]
+    cmd = [
+        "ip",
+        "route",
+        "del",
+        destination_cidr,
+        "via",
+        gateway,
+        "dev",
+        interface_name,
+    ]
     subprocess.check_call(cmd)
+
 
 def change_dns(interface_name, dns_list, permanent):
     if permanent:
-        run_command(['nmcli', 'connection', 'modify', interface_name, 'ipv4.dns', ','.join(dns_list)])
-        run_command(['nmcli', 'connection', 'up', interface_name])
+        run_command(
+            [
+                "nmcli",
+                "connection",
+                "modify",
+                interface_name,
+                "ipv4.dns",
+                ",".join(dns_list),
+            ]
+        )
+        run_command(["nmcli", "connection", "up", interface_name])
     else:
         for dns in dns_list:
-            run_command(['resolvectl', 'dns', interface_name, dns])
+            run_command(["resolvectl", "dns", interface_name, dns])
+
 
 def change_hostname(new_hostname):
-    run_command(['hostnamectl', 'set-hostname', new_hostname])
+    run_command(["hostnamectl", "set-hostname", new_hostname])
+
 
 def set_static_ip(interface_name, ip_address, subnet_mask, gateway, permanent):
     cidr = f"{ip_address}/{subnet_mask}"
     if permanent:
-        run_command(['nmcli', 'connection', 'modify', interface_name, 'ipv4.addresses', cidr])
+        run_command(
+            ["nmcli", "connection", "modify", interface_name, "ipv4.addresses", cidr]
+        )
         if gateway:
-            run_command(['nmcli', 'connection', 'modify', interface_name, 'ipv4.gateway', gateway])
-        run_command(['nmcli', 'connection', 'modify', interface_name, 'ipv4.method', 'manual'])
-        run_command(['nmcli', 'connection', 'up', interface_name])
+            run_command(
+                [
+                    "nmcli",
+                    "connection",
+                    "modify",
+                    interface_name,
+                    "ipv4.gateway",
+                    gateway,
+                ]
+            )
+        run_command(
+            ["nmcli", "connection", "modify", interface_name, "ipv4.method", "manual"]
+        )
+        run_command(["nmcli", "connection", "up", interface_name])
     else:
-        run_command(['ip', 'addr', 'flush', 'dev', interface_name])
-        run_command(['ip', 'addr', 'add', cidr, 'dev', interface_name])
+        run_command(["ip", "addr", "flush", "dev", interface_name])
+        run_command(["ip", "addr", "add", cidr, "dev", interface_name])
         if gateway:
-            run_command(['ip', 'route', 'add', 'default', 'via', gateway, 'dev', interface_name])
+            run_command(
+                ["ip", "route", "add", "default", "via", gateway, "dev", interface_name]
+            )
+
 
 def use_dhcp(interface_name):
-    run_command(['nmcli', 'connection', 'modify', interface_name, 'ipv4.method', 'auto'])
-    run_command(['nmcli', 'connection', 'up', interface_name])
+    run_command(
+        ["nmcli", "connection", "modify", interface_name, "ipv4.method", "auto"]
+    )
+    run_command(["nmcli", "connection", "up", interface_name])
+
 
 #################
 # Phase 1: TUI  #
@@ -204,16 +271,19 @@ import curses
 
 phase1_logger = logging.getLogger("phase1_logger")
 
+
 def select_interface(screen):
     interfaces = get_network_interfaces()
     selected = 0
     while True:
         screen.clear()
         screen.border(0)
-        print_wrapped(screen, 2, 2, "Select Interface (ESC to go back)", screen.getmaxyx()[1]-4)
+        print_wrapped(
+            screen, 2, 2, "Select Interface (ESC to go back)", screen.getmaxyx()[1] - 4
+        )
         for idx, iface in enumerate(interfaces):
             prefix = "> " if idx == selected else "  "
-            print_wrapped(screen, 4+idx, 2, prefix + iface, screen.getmaxyx()[1]-4)
+            print_wrapped(screen, 4 + idx, 2, prefix + iface, screen.getmaxyx()[1] - 4)
         key = screen.getch()
         if key == curses.KEY_UP and selected > 0:
             selected -= 1
@@ -224,16 +294,17 @@ def select_interface(screen):
         elif key == 27:
             return None
 
+
 def select_permanence(screen):
     options = ["Temporarily", "Permanently", "Back"]
     selected = 0
     while True:
         screen.clear()
         screen.border(0)
-        print_wrapped(screen, 2, 2, "Apply Change:", screen.getmaxyx()[1]-4)
+        print_wrapped(screen, 2, 2, "Apply Change:", screen.getmaxyx()[1] - 4)
         for idx, option in enumerate(options):
             prefix = "> " if idx == selected else "  "
-            print_wrapped(screen, 4+idx, 2, prefix + option, screen.getmaxyx()[1]-4)
+            print_wrapped(screen, 4 + idx, 2, prefix + option, screen.getmaxyx()[1] - 4)
         key = screen.getch()
         if key == curses.KEY_UP and selected > 0:
             selected -= 1
@@ -242,9 +313,10 @@ def select_permanence(screen):
         elif key in [10, 13]:
             if options[selected] == "Back":
                 return None
-            return (selected == 1)
+            return selected == 1
         elif key == 27:
             return None
+
 
 def change_dns_form(screen):
     while True:
@@ -252,13 +324,15 @@ def change_dns_form(screen):
         if interface is None:
             return
         while True:
-            dns_servers = input_box(screen, "Enter up to 3 DNS Servers (comma-separated):")
+            dns_servers = input_box(
+                screen, "Enter up to 3 DNS Servers (comma-separated):"
+            )
             if dns_servers is None:
                 break
-            if dns_servers == '':
+            if dns_servers == "":
                 message_box(screen, "DNS Servers cannot be empty!")
                 continue
-            dns_list = [dns.strip() for dns in dns_servers.split(',') if dns.strip()]
+            dns_list = [dns.strip() for dns in dns_servers.split(",") if dns.strip()]
             if len(dns_list) == 0:
                 message_box(screen, "No valid DNS servers entered!")
                 continue
@@ -283,12 +357,15 @@ def change_dns_form(screen):
             try:
                 change_dns(interface, dns_list, permanent)
                 message_box(screen, "DNS updated successfully!")
-                phase1_logger.info(f"DNS updated to {dns_list} on {interface}, permanent={permanent}")
+                phase1_logger.info(
+                    f"DNS updated to {dns_list} on {interface}, permanent={permanent}"
+                )
                 return
             except Exception as e:
                 phase1_logger.error(f"Error updating DNS: {e}")
                 message_box(screen, f"Error: {e}")
         return
+
 
 def change_hostname_form(screen):
     while True:
@@ -306,6 +383,7 @@ def change_hostname_form(screen):
         except Exception as e:
             phase1_logger.error(f"Error changing hostname: {e}")
             message_box(screen, f"Error: {e}")
+
 
 def set_static_ip_form(screen):
     while True:
@@ -335,13 +413,13 @@ def set_static_ip_form(screen):
                 continue
             break
 
-        gateway = ''
+        gateway = ""
         while True:
             gw = input_box(screen, "Enter Gateway IP (Optional):")
             if gw is None:
                 return
-            if gw == '':
-                gateway = ''
+            if gw == "":
+                gateway = ""
                 break
             if not validate_ip(gw):
                 message_box(screen, "Invalid Gateway IP!")
@@ -365,11 +443,14 @@ def set_static_ip_form(screen):
         try:
             set_static_ip(interface, ip_address, mask_int, gateway, permanent)
             message_box(screen, "Static IP set successfully!")
-            phase1_logger.info(f"Set static IP {ip_address}/{mask_int} on {interface}, permanent={permanent}")
+            phase1_logger.info(
+                f"Set static IP {ip_address}/{mask_int} on {interface}, permanent={permanent}"
+            )
             return
         except Exception as e:
             phase1_logger.error(f"Error setting static IP: {e}")
             message_box(screen, f"Error: {e}")
+
 
 def use_dhcp_form(screen):
     while True:
@@ -384,6 +465,7 @@ def use_dhcp_form(screen):
         except Exception as e:
             phase1_logger.error(f"Error enabling DHCP: {e}")
             message_box(screen, f"Error: {e}")
+
 
 def add_route_form(screen):
     while True:
@@ -434,13 +516,16 @@ def add_route_form(screen):
             else:
                 add_route_temporary(iface, cidr, gw)
             message_box(screen, "Route added successfully!")
-            phase1_logger.info(f"Added route {cidr} via {gw} on {iface}, perm={permanent}")
+            phase1_logger.info(
+                f"Added route {cidr} via {gw} on {iface}, perm={permanent}"
+            )
             return
         except ValueError as ve:
             message_box(screen, str(ve))
         except subprocess.CalledProcessError as cpe:
             phase1_logger.error(f"Error adding route: {cpe}")
             message_box(screen, f"Error: {cpe}")
+
 
 def remove_route_form(screen):
     while True:
@@ -492,6 +577,7 @@ def remove_route_form(screen):
             phase1_logger.error(f"Error removing route: {cpe}")
             message_box(screen, f"Error: {cpe}")
 
+
 def network_configuration_menu(screen):
     """
     Phase 1 menu for DNS, Hostname, Static IP, DHCP, Routes.
@@ -504,15 +590,21 @@ def network_configuration_menu(screen):
         "Use DHCP",
         "Add Route",
         "Remove Route",
-        "Back to Main Menu"
+        "Back to Main Menu",
     ]
     while True:
         screen.clear()
         screen.border(0)
-        print_wrapped(screen, 2, 2, "Network Configuration Menu (ESC to go back)", screen.getmaxyx()[1]-4)
+        print_wrapped(
+            screen,
+            2,
+            2,
+            "Network Configuration Menu (ESC to go back)",
+            screen.getmaxyx()[1] - 4,
+        )
         for idx, opt in enumerate(options):
             prefix = "> " if idx == selected else "  "
-            print_wrapped(screen, 4+idx, 2, prefix + opt, screen.getmaxyx()[1]-4)
+            print_wrapped(screen, 4 + idx, 2, prefix + opt, screen.getmaxyx()[1] - 4)
         key = screen.getch()
         if key == curses.KEY_UP and selected > 0:
             selected -= 1
@@ -536,9 +628,11 @@ def network_configuration_menu(screen):
         elif key == 27:
             break
 
+
 ##################################
 # Phase 2: Nftables Management   #
 ##################################
+
 
 def flush_all_rules():
     """
@@ -549,6 +643,7 @@ def flush_all_rules():
         phase2_logger.info("Flushed all nftables ruleset.")
     except Exception as e:
         phase2_logger.error(f"Failed to flush ruleset: {e}")
+
 
 def remove_and_reinstall_nftables():
     """
@@ -563,6 +658,7 @@ def remove_and_reinstall_nftables():
     except Exception as e:
         phase2_logger.error(f"Failed to remove/reinstall nftables: {e}")
 
+
 def final_nft_attempt(screen):
     """
     After a flush or remove/reinstall attempt, do final tries to start service.
@@ -573,7 +669,12 @@ def final_nft_attempt(screen):
         phase2_logger.info("Finally started nftables.service after last resort.")
     except Exception as e:
         phase2_logger.error(f"Last resort attempt failed to start nftables: {e}")
-        message_box(screen, "Could not start nftables even after last resort.\nRules will not apply properly.")
+        message_box(
+            screen,
+            "Could not start nftables even after last resort.\nRules will not apply properly.",
+        )
+
+
 def ensure_nftables_conf(screen):
     """
     Ensure /etc/nftables.conf has minimal definitions for 'inet filter'
@@ -604,7 +705,7 @@ table ip nat {
 }
 """
         try:
-            with open(conf_path, 'w') as f:
+            with open(conf_path, "w") as f:
                 f.write(default_conf)
             # If you want to log success, do so here:
             # phase2_logger.info("Created a default /etc/nftables.conf with basic filter and nat config.")
@@ -614,6 +715,7 @@ table ip nat {
             # phase2_logger.error(f"Error creating /etc/nftables.conf: {e}")
             # And possibly show a message to the user:
             message_box(screen, f"Error creating {conf_path}:\n{e}")
+
 
 def check_nft_installed_phase2(screen):
     """
@@ -639,7 +741,9 @@ def check_nft_installed_phase2(screen):
 
     # 2) Check service
     try:
-        status = subprocess.check_output(["systemctl", "is-active", "nftables"], universal_newlines=True).strip()
+        status = subprocess.check_output(
+            ["systemctl", "is-active", "nftables"], universal_newlines=True
+        ).strip()
         if status != "active":
             # Try enable & start
             try:
@@ -648,7 +752,9 @@ def check_nft_installed_phase2(screen):
                 phase2_logger.info("Enabled & started nftables.service.")
             except Exception as e:
                 # Attempt flush + remove & reinstall
-                phase2_logger.warning(f"Failed to enable/start nftables.service initially:\n{e}")
+                phase2_logger.warning(
+                    f"Failed to enable/start nftables.service initially:\n{e}"
+                )
                 flush_all_rules()
                 remove_and_reinstall_nftables()
                 final_nft_attempt(screen)
@@ -662,6 +768,7 @@ def check_nft_installed_phase2(screen):
     # 3) Ensure minimal config
     ensure_nftables_conf(screen)
     return True
+
 
 def apply_nft_rule(screen, rule, nat=False):
     """
@@ -683,7 +790,7 @@ def apply_nft_rule(screen, rule, nat=False):
         full_rule = f"add rule inet filter input {rule}\n"
 
     try:
-        with open(conf_path, 'a') as f:
+        with open(conf_path, "a") as f:
             f.write(full_rule)
 
         run_command(["nft", "-f", conf_path])
@@ -693,9 +800,11 @@ def apply_nft_rule(screen, rule, nat=False):
         phase2_logger.error(f"Error applying nft rule: {e}")
         message_box(screen, f"Error applying rule:\n{e}")
 
+
 ###############
 # RULE FORMS  #
 ###############
+
 
 def validate_ip_input_phase2(screen, prompt):
     while True:
@@ -708,6 +817,7 @@ def validate_ip_input_phase2(screen, prompt):
         except:
             message_box(screen, f"Invalid IP: {val}")
             continue
+
 
 def ct_state_rule_form(screen):
     allowed_states = ["established", "related", "invalid", "new"]
@@ -733,6 +843,7 @@ def ct_state_rule_form(screen):
 
     rule = f"ct state {state} {action}"
     apply_nft_rule(screen, rule, nat=False)
+
 
 def ip_proto_rule_form(screen):
     src = validate_ip_input_phase2(screen, "Enter source IP:")
@@ -772,6 +883,7 @@ def ip_proto_rule_form(screen):
     rule = f"ip saddr {src} ip daddr {dst} {proto} dport {dport} {action}"
     apply_nft_rule(screen, rule, nat=False)
 
+
 def icmp_rule_form(screen):
     src = validate_ip_input_phase2(screen, "Enter source IP:")
     if src is None:
@@ -786,7 +898,9 @@ def icmp_rule_form(screen):
         return
     while icmp_type not in allowed_types:
         message_box(screen, f"Invalid ICMP type: {icmp_type}")
-        icmp_type = input_box(screen, f"Re-enter ICMP type ({'/'.join(allowed_types)}):")
+        icmp_type = input_box(
+            screen, f"Re-enter ICMP type ({'/'.join(allowed_types)}):"
+        )
         if icmp_type is None:
             return
 
@@ -800,9 +914,9 @@ def icmp_rule_form(screen):
         if action is None:
             return
 
-
     rule = f"ip saddr {src} ip daddr {dst} icmp type {icmp_type} {action}"
     apply_nft_rule(screen, rule, nat=False)
+
 
 def masquerade_rule_form(screen):
     src = validate_ip_input_phase2(screen, "Enter source IP:")
@@ -814,6 +928,7 @@ def masquerade_rule_form(screen):
 
     rule = f"ip saddr {src} ip daddr {dst} masquerade"
     apply_nft_rule(screen, rule, nat=True)
+
 
 def dnat_rule_form(screen):
     src = validate_ip_input_phase2(screen, "Enter source IP:")
@@ -833,10 +948,10 @@ def dnat_rule_form(screen):
     new_target = input_box(screen, "Enter DNAT target (IP:PORT):")
     if new_target is None:
         return
-    if ':' not in new_target:
+    if ":" not in new_target:
         message_box(screen, "Invalid DNAT target format (use IP:PORT).")
         return
-    ip_part, port_part = new_target.split(':', 1)
+    ip_part, port_part = new_target.split(":", 1)
     try:
         ipaddress.IPv4Address(ip_part)
     except:
@@ -849,9 +964,11 @@ def dnat_rule_form(screen):
     rule = f"ip saddr {src} ip daddr {dst} tcp dport {dport} dnat to {new_target}"
     apply_nft_rule(screen, rule, nat=True)
 
+
 ############################
 # Phase 2 TUI Menu         #
 ############################
+
 
 def nftables_menu(screen):
     if not check_nft_installed_phase2(screen):
@@ -864,17 +981,19 @@ def nftables_menu(screen):
         "Create ICMP rule",
         "Create masquerade rule",
         "Create DNAT rule",
-        "Back to Main Menu"
+        "Back to Main Menu",
     ]
 
     while True:
         screen.clear()
         screen.border(0)
         max_y, max_x = screen.getmaxyx()
-        print_wrapped(screen, 2, 2, "Phase 2: Nftables Management (ESC to go back)", max_x - 4)
+        print_wrapped(
+            screen, 2, 2, "Phase 2: Nftables Management (ESC to go back)", max_x - 4
+        )
         for idx, opt in enumerate(options):
             prefix = "> " if idx == selected else "  "
-            print_wrapped(screen, 4+idx, 2, prefix + opt, max_x - 4)
+            print_wrapped(screen, 4 + idx, 2, prefix + opt, max_x - 4)
 
         key = screen.getch()
         if key == curses.KEY_UP and selected > 0:
@@ -896,16 +1015,18 @@ def nftables_menu(screen):
                 break
         elif key == 27:
             break
-        
+
+
 ##################################
 # Phase 3: OVS Utility Functions #
 ##################################
+
 
 def run_cmd(cmd):
     """
     Run a shell command quietly, raise on failure.
     """
-    with open(os.devnull, 'w') as devnull:
+    with open(os.devnull, "w") as devnull:
         subprocess.check_call(cmd, stdout=devnull, stderr=devnull)
 
 
@@ -923,7 +1044,9 @@ def check_ovs_installed():
         return True
     except subprocess.CalledProcessError:
         # Not installed, let's install
-        phase3_logger.info("OVS is not installed. Attempting to install openvswitch-switch.")
+        phase3_logger.info(
+            "OVS is not installed. Attempting to install openvswitch-switch."
+        )
         try:
             run_cmd(["apt-get", "update"])
             run_cmd(["apt-get", "install", "-y", "openvswitch-switch"])
@@ -932,6 +1055,7 @@ def check_ovs_installed():
         except Exception as e:
             phase3_logger.error(f"Failed to install openvswitch-switch: {e}")
             return False
+
 
 def bridge_exists(bridge_name):
     """
@@ -946,22 +1070,27 @@ def bridge_exists(bridge_name):
     except subprocess.CalledProcessError:
         return False  # if error, means bridge doesn't exist
 
+
 def interface_exists(iface_name):
     """
     Return True if network interface (port) 'iface_name' exists,
     otherwise False. Uses 'ip link show <iface_name>'.
     """
     try:
-        subprocess.check_call(["ip", "link", "show", iface_name],
-                              stdout=subprocess.DEVNULL,
-                              stderr=subprocess.DEVNULL)
+        subprocess.check_call(
+            ["ip", "link", "show", iface_name],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
         return True
     except subprocess.CalledProcessError:
         return False
-    
+
+
 ###############################
 # Creating/Deleting Bridges   #
 ###############################
+
 
 def add_ovs_bridge(bridge_name):
     """
@@ -970,6 +1099,7 @@ def add_ovs_bridge(bridge_name):
     run_cmd(["ovs-vsctl", "add-br", bridge_name])
     phase3_logger.info(f"Created OVS Bridge: {bridge_name}")
 
+
 def delete_ovs_bridge(bridge_name):
     """
     Delete an OVS bridge if it exists, otherwise raise an error.
@@ -977,7 +1107,7 @@ def delete_ovs_bridge(bridge_name):
     if not bridge_exists(bridge_name):
         phase3_logger.error(f"Bridge '{bridge_name}' does not exist.")
         raise ValueError(f"Bridge '{bridge_name}' does not exist.")
-    
+
     run_cmd(["ovs-vsctl", "del-br", bridge_name])
     phase3_logger.info(f"Deleted OVS Bridge: {bridge_name}")
 
@@ -986,34 +1116,36 @@ def delete_ovs_bridge(bridge_name):
 # Adding/Removing Ports
 ########################
 
+
 def add_port_to_bridge(bridge_name, port_name):
     """
     Add a port to an OVS bridge, checking if both bridge and port exist.
-    If port doesn't exist (system interface), fail. 
+    If port doesn't exist (system interface), fail.
     For internal ports, user must specify 'type=internal' (see add_port_to_bridge_form).
     """
     if not bridge_exists(bridge_name):
         phase3_logger.error(f"Cannot add port to non-existent bridge '{bridge_name}'.")
         raise ValueError(f"Bridge '{bridge_name}' does not exist.")
-    
+
     # If user said it's a system interface, we check if it exists
     # If it's an internal port, we skip - see add_port_to_bridge_form for logic
     # (In this function, we do not check again since we rely on the logic in the form.)
-    
+
     # Just do it. If it fails, we catch the error above in the caller.
     run_cmd(["ovs-vsctl", "add-port", bridge_name, port_name])
     phase3_logger.info(f"Added port {port_name} to bridge {bridge_name}")
 
+
 def remove_port_from_bridge(bridge_name, port_name):
     """
-    Remove a port from a bridge. We rely on 'ovs-vsctl del-port' to fail if 
+    Remove a port from a bridge. We rely on 'ovs-vsctl del-port' to fail if
     either the bridge or port doesn't exist or if the port is not on that bridge.
     """
     if not bridge_exists(bridge_name):
         phase3_logger.error(f"Bridge '{bridge_name}' does not exist.")
         raise ValueError(f"Bridge '{bridge_name}' does not exist.")
-    
-    # Attempt removal. If port isn't on the bridge, this fails, 
+
+    # Attempt removal. If port isn't on the bridge, this fails,
     # and we catch the error in the caller.
     run_cmd(["ovs-vsctl", "del-port", bridge_name, port_name])
     phase3_logger.info(f"Removed port {port_name} from bridge {bridge_name}")
@@ -1023,6 +1155,7 @@ def remove_port_from_bridge(bridge_name, port_name):
 # Up/Down, Trunk/Access
 ############################
 
+
 def bring_port_up(port_name):
     """
     Bring a port up: 'ip link set <port> up'.
@@ -1030,12 +1163,14 @@ def bring_port_up(port_name):
     run_cmd(["ip", "link", "set", port_name, "up"])
     phase3_logger.info(f"Brought port {port_name} up")
 
+
 def bring_port_down(port_name):
     """
     Bring a port down: 'ip link set <port> down'.
     """
     run_cmd(["ip", "link", "set", port_name, "down"])
     phase3_logger.info(f"Brought port {port_name} down")
+
 
 def set_port_trunk(port_name, vlan_list):
     """
@@ -1048,6 +1183,7 @@ def set_port_trunk(port_name, vlan_list):
     run_cmd(["ovs-vsctl", "set", "port", port_name, f"trunks={vlan_list}"])
     phase3_logger.info(f"Set port {port_name} as trunk with VLANs: {vlan_list}")
 
+
 def set_port_access(port_name, vlan_id):
     """
     Switch port to access mode by removing 'trunks' config and setting 'tag'.
@@ -1056,6 +1192,7 @@ def set_port_access(port_name, vlan_id):
     run_cmd(["ovs-vsctl", "--if-exists", "remove", "port", port_name, "trunks"])
     run_cmd(["ovs-vsctl", "set", "port", port_name, f"tag={vlan_id}"])
     phase3_logger.info(f"Set port {port_name} as access on VLAN {vlan_id}")
+
 
 def configure_ip_on_vlan_interface(vlan_interface, ip_address, subnet_mask):
     """
@@ -1073,9 +1210,11 @@ def configure_ip_on_vlan_interface(vlan_interface, ip_address, subnet_mask):
     run_cmd(["ip", "link", "set", vlan_interface, "up"])
     phase3_logger.info(f"Configured {vlan_interface} with IP {cidr}")
 
+
 #######################
 # Phase 3 TUI Menus   #
 #######################
+
 
 def add_ovs_bridge_form(screen):
     """
@@ -1086,7 +1225,9 @@ def add_ovs_bridge_form(screen):
         return
     # 1. Check if bridge already exists:
     if bridge_exists(br):
-        message_box(screen, f"Bridge '{br}' already exists!\nPlease choose another name.")
+        message_box(
+            screen, f"Bridge '{br}' already exists!\nPlease choose another name."
+        )
         phase3_logger.warning(f"Attempted to create existing bridge '{br}'.")
         return
     # 2. Create if doesn't exist
@@ -1096,6 +1237,7 @@ def add_ovs_bridge_form(screen):
     except Exception as e:
         phase3_logger.error(f"Error creating bridge {br}: {e}")
         message_box(screen, f"Error creating bridge:\n{e}")
+
 
 def delete_ovs_bridge_form(screen):
     """
@@ -1111,6 +1253,7 @@ def delete_ovs_bridge_form(screen):
         phase3_logger.error(f"Error deleting bridge {br}: {e}")
         message_box(screen, f"Error deleting bridge:\n{e}")
 
+
 def select_port_type(screen):
     """
     Ask user if the new port is a system interface or an internal port.
@@ -1125,7 +1268,7 @@ def select_port_type(screen):
         print_wrapped(screen, 2, 2, "Choose Port Type (ESC to go back)", max_x - 4)
         for idx, opt in enumerate(options):
             prefix = "> " if idx == selected else "  "
-            print_wrapped(screen, 4+idx, 2, prefix + opt, max_x - 4)
+            print_wrapped(screen, 4 + idx, 2, prefix + opt, max_x - 4)
         key = screen.getch()
         if key == curses.KEY_UP and selected > 0:
             selected -= 1
@@ -1140,6 +1283,7 @@ def select_port_type(screen):
                 return "internal"
         elif key == 27:  # ESC
             return None
+
 
 def add_port_to_bridge_form(screen):
     """
@@ -1162,29 +1306,54 @@ def add_port_to_bridge_form(screen):
     try:
         if not bridge_exists(br):
             message_box(screen, f"Bridge '{br}' does not exist!")
-            phase3_logger.warning(f"User tried to add port to non-existent bridge '{br}'.")
+            phase3_logger.warning(
+                f"User tried to add port to non-existent bridge '{br}'."
+            )
             return
 
         if port_type == "system":
             # Check if underlying interface actually exists
             if not interface_exists(port_name):
-                message_box(screen, f"Interface '{port_name}' does not exist!\nCannot add to OVS as a system port.")
-                phase3_logger.warning(f"User tried adding non-existent system interface '{port_name}' to {br}.")
+                message_box(
+                    screen,
+                    f"Interface '{port_name}' does not exist!\nCannot add to OVS as a system port.",
+                )
+                phase3_logger.warning(
+                    f"User tried adding non-existent system interface '{port_name}' to {br}."
+                )
                 return
             # Add an existing system interface
             run_cmd(["ovs-vsctl", "add-port", br, port_name])
-            phase3_logger.info(f"Added existing system port '{port_name}' to bridge '{br}'")
+            phase3_logger.info(
+                f"Added existing system port '{port_name}' to bridge '{br}'"
+            )
         else:
             # internal
             # Creating an OVS internal port that does not exist yet
-            run_cmd(["ovs-vsctl", "add-port", br, port_name,
-                     "--", "set", "interface", port_name, "type=internal"])
+            run_cmd(
+                [
+                    "ovs-vsctl",
+                    "add-port",
+                    br,
+                    port_name,
+                    "--",
+                    "set",
+                    "interface",
+                    port_name,
+                    "type=internal",
+                ]
+            )
             phase3_logger.info(f"Created internal port '{port_name}' on bridge '{br}'")
 
-        message_box(screen, f"Port '{port_name}' added to bridge '{br}' as {port_type}.")
+        message_box(
+            screen, f"Port '{port_name}' added to bridge '{br}' as {port_type}."
+        )
     except Exception as e:
-        phase3_logger.error(f"Error adding port {port_name} to {br} as {port_type}: {e}")
+        phase3_logger.error(
+            f"Error adding port {port_name} to {br} as {port_type}: {e}"
+        )
         message_box(screen, f"Error adding port:\n{e}")
+
 
 def remove_port_from_bridge_form(screen):
     """
@@ -1203,6 +1372,7 @@ def remove_port_from_bridge_form(screen):
         phase3_logger.error(f"Error removing port {prt} from bridge {br}: {e}")
         message_box(screen, f"Error removing port:\n{e}")
 
+
 def bring_port_up_form(screen):
     prt = input_box(screen, "Enter port (interface) name to bring up:")
     if prt is None:
@@ -1218,6 +1388,7 @@ def bring_port_up_form(screen):
     except Exception as e:
         phase3_logger.error(f"Error bringing port {prt} up: {e}")
         message_box(screen, f"Error:\n{e}")
+
 
 def bring_port_down_form(screen):
     prt = input_box(screen, "Enter port (interface) name to bring down:")
@@ -1235,12 +1406,15 @@ def bring_port_down_form(screen):
         phase3_logger.error(f"Error bringing port {prt} down: {e}")
         message_box(screen, f"Error:\n{e}")
 
+
 def set_port_trunk_form(screen):
     prt = input_box(screen, "Enter port name to set as trunk:")
     if prt is None:
         return
     if not interface_exists(prt):
-        message_box(screen, f"Interface '{prt}' does not exist!\nCannot set trunk mode.")
+        message_box(
+            screen, f"Interface '{prt}' does not exist!\nCannot set trunk mode."
+        )
         phase3_logger.warning(f"Attempted trunk on non-existent port '{prt}'.")
         return
     vlans = input_box(screen, "Enter comma-separated VLAN IDs (e.g. 10,20,30):")
@@ -1253,12 +1427,15 @@ def set_port_trunk_form(screen):
         phase3_logger.error(f"Error setting trunk mode on {prt}: {e}")
         message_box(screen, f"Error:\n{e}")
 
+
 def set_port_access_form(screen):
     prt = input_box(screen, "Enter port name to set as access:")
     if prt is None:
         return
     if not interface_exists(prt):
-        message_box(screen, f"Interface '{prt}' does not exist!\nCannot set access mode.")
+        message_box(
+            screen, f"Interface '{prt}' does not exist!\nCannot set access mode."
+        )
         phase3_logger.warning(f"Attempted access mode on non-existent port '{prt}'.")
         return
     vlan_id_str = input_box(screen, "Enter single VLAN ID (e.g. 10):")
@@ -1273,6 +1450,7 @@ def set_port_access_form(screen):
     except Exception as e:
         phase3_logger.error(f"Error setting access mode on {prt}: {e}")
         message_box(screen, f"Error:\n{e}")
+
 
 def configure_ip_for_vlan_interface_form(screen):
     """
@@ -1305,14 +1483,18 @@ def configure_ip_for_vlan_interface_form(screen):
 
     try:
         configure_ip_on_vlan_interface(vlan_if, ip_str, mask_int)
-        message_box(screen, f"Configured VLAN interface '{vlan_if}' with {ip_str}/{mask_int}.")
+        message_box(
+            screen, f"Configured VLAN interface '{vlan_if}' with {ip_str}/{mask_int}."
+        )
     except Exception as e:
         phase3_logger.error(f"Error configuring IP on VLAN interface {vlan_if}: {e}")
         message_box(screen, f"Error:\n{e}")
 
+
 ######################
 # Phase 3 TUI Menu   #
 ######################
+
 
 def ovs_management_menu(screen):
     """
@@ -1320,7 +1502,10 @@ def ovs_management_menu(screen):
     """
     # 1) Check if OVS installed
     if not check_ovs_installed():
-        message_box(screen, "Failed to install Open vSwitch.\nCannot proceed with OVS management.")
+        message_box(
+            screen,
+            "Failed to install Open vSwitch.\nCannot proceed with OVS management.",
+        )
         return
 
     selected = 0
@@ -1334,17 +1519,19 @@ def ovs_management_menu(screen):
         "Set Port as Trunk",
         "Set Port as Access",
         "Configure IP for VLAN Interface",
-        "Back to Main Menu"
+        "Back to Main Menu",
     ]
     while True:
         screen.clear()
         screen.border(0)
         max_y, max_x = screen.getmaxyx()
-        print_wrapped(screen, 2, 2, "Phase 3: Open vSwitch Management (ESC to go back)", max_x - 4)
+        print_wrapped(
+            screen, 2, 2, "Phase 3: Open vSwitch Management (ESC to go back)", max_x - 4
+        )
 
         for idx, opt in enumerate(options):
             prefix = "> " if idx == selected else "  "
-            print_wrapped(screen, 4+idx, 2, prefix + opt, max_x - 4)
+            print_wrapped(screen, 4 + idx, 2, prefix + opt, max_x - 4)
 
         key = screen.getch()
         if key == curses.KEY_UP and selected > 0:
@@ -1375,15 +1562,18 @@ def ovs_management_menu(screen):
         elif key == 27:
             break
 
+
 ##############################
 # Phase 4: Network Monitoring
 ##############################
+
 
 def get_interfaces():
     """
     Return a list of network interfaces on the system by reading /sys/class/net.
     """
-    return os.listdir('/sys/class/net')
+    return os.listdir("/sys/class/net")
+
 
 def interface_is_up(iface):
     """
@@ -1392,22 +1582,24 @@ def interface_is_up(iface):
     try:
         with open(f"/sys/class/net/{iface}/operstate", "r") as f:
             state = f.read().strip()
-            return (state == "up")
+            return state == "up"
     except Exception as e:
         phase4_logger.error(f"Error reading state for {iface}: {e}")
         return False
 
+
 def get_interface_type(iface):
     """
-    Guess interface type: physical or virtual. 
+    Guess interface type: physical or virtual.
     A simple approach: if /sys/class/net/<iface>/device exists, assume physical.
-    If not, assume virtual. 
+    If not, assume virtual.
     """
     dev_path = f"/sys/class/net/{iface}/device"
     if os.path.exists(dev_path):
         return "physical"
     else:
         return "virtual"
+
 
 def get_link_speed(iface):
     """
@@ -1425,16 +1617,18 @@ def get_link_speed(iface):
             return "unknown"
     return "unknown"
 
+
 def get_ip_addresses(iface):
     """
     Return a list of IP addresses (v4) assigned to 'iface' using 'ip -4 addr show <iface>'.
     """
     ips = []
     try:
-        output = subprocess.check_output(["ip", "-4", "addr", "show", iface],
-                                         universal_newlines=True)
+        output = subprocess.check_output(
+            ["ip", "-4", "addr", "show", iface], universal_newlines=True
+        )
         for line in output.splitlines():
-            line=line.strip()
+            line = line.strip()
             if line.startswith("inet "):
                 # example: 'inet 192.168.1.10/24 brd 192.168.1.255 scope global dynamic noprefixroute ens33'
                 parts = line.split()
@@ -1445,13 +1639,18 @@ def get_ip_addresses(iface):
         phase4_logger.error(f"Error reading IP addresses for {iface}: {cpe}")
     return ips
 
+
 def get_protocol_stats():
     """
     Return a dict of TCP/UDP stats from /proc/net/snmp or 'ss' command.
     For simplicity, we parse /proc/net/snmp for basic 'Tcp:' and 'Udp:' lines.
     """
-    stats = {"tcp_established": 0, "tcp_listen": 0,
-             "udp_in_datagrams": 0, "udp_out_datagrams": 0}
+    stats = {
+        "tcp_established": 0,
+        "tcp_listen": 0,
+        "udp_in_datagrams": 0,
+        "udp_out_datagrams": 0,
+    }
     # Attempt to parse /proc/net/snmp
     try:
         with open("/proc/net/snmp", "r") as f:
@@ -1472,8 +1671,9 @@ def get_protocol_stats():
     # We'll do a quick approach with 'ss':
     try:
         # count tcp established
-        tcp_est_out = subprocess.check_output(["ss", "-t", "-a", "-n", "state", "established"],
-                                              universal_newlines=True)
+        tcp_est_out = subprocess.check_output(
+            ["ss", "-t", "-a", "-n", "state", "established"], universal_newlines=True
+        )
         # first line is a header, subsequent lines are connections
         lines = tcp_est_out.strip().split("\n")
         if len(lines) > 1:
@@ -1482,8 +1682,9 @@ def get_protocol_stats():
         pass
     # count tcp listening
     try:
-        tcp_listen_out = subprocess.check_output(["ss", "-t", "-a", "-n", "state", "listening"],
-                                                 universal_newlines=True)
+        tcp_listen_out = subprocess.check_output(
+            ["ss", "-t", "-a", "-n", "state", "listening"], universal_newlines=True
+        )
         lines = tcp_listen_out.strip().split("\n")
         if len(lines) > 1:
             stats["tcp_listen"] = len(lines) - 1
@@ -1491,8 +1692,9 @@ def get_protocol_stats():
         pass
     # for UDP, let's just do 'ss -u -a'
     try:
-        udp_out = subprocess.check_output(["ss", "-u", "-a", "-n"],
-                                          universal_newlines=True)
+        udp_out = subprocess.check_output(
+            ["ss", "-u", "-a", "-n"], universal_newlines=True
+        )
         lines = udp_out.strip().split("\n")
         if len(lines) > 1:
             # This is a simplistic measure of open UDP sockets
@@ -1501,6 +1703,7 @@ def get_protocol_stats():
         pass
 
     return stats
+
 
 def get_bytes_packets(iface):
     """
@@ -1527,6 +1730,7 @@ def get_bytes_packets(iface):
 # TUI: Phase 4 Monitoring Menu  #
 #################################
 
+
 def view_interface_info(screen):
     """
     Display name, status, type, link speed, and IP addresses for each interface.
@@ -1535,7 +1739,9 @@ def view_interface_info(screen):
     screen.clear()
     screen.border(0)
     max_y, max_x = screen.getmaxyx()
-    print_wrapped(screen, 1, 2, "Interfaces Information (Press any key to return)", max_x - 4)
+    print_wrapped(
+        screen, 1, 2, "Interfaces Information (Press any key to return)", max_x - 4
+    )
     y = 3
     for iface in interfaces:
         up_down = "UP" if interface_is_up(iface) else "DOWN"
@@ -1560,6 +1766,7 @@ def view_interface_info(screen):
     screen.refresh()
     screen.getch()  # Wait for user to press a key
 
+
 def view_protocol_stats(screen):
     """
     Display stats about TCP/UDP using get_protocol_stats.
@@ -1571,17 +1778,22 @@ def view_protocol_stats(screen):
     line1 = "Network Protocol Statistics"
     print_wrapped(screen, 1, 2, line1, max_x - 4)
     y = 3
-    print_wrapped(screen, y, 2, f"TCP Established: {stats['tcp_established']}", max_x - 4)
+    print_wrapped(
+        screen, y, 2, f"TCP Established: {stats['tcp_established']}", max_x - 4
+    )
     y += 1
     print_wrapped(screen, y, 2, f"TCP Listening:   {stats['tcp_listen']}", max_x - 4)
     y += 2
     # 'udp_in_datagrams' is just how many open sockets we found from 'ss -u'
-    print_wrapped(screen, y, 2, f"UDP Sockets Found: {stats['udp_in_datagrams']}", max_x - 4)
+    print_wrapped(
+        screen, y, 2, f"UDP Sockets Found: {stats['udp_in_datagrams']}", max_x - 4
+    )
     y += 2
     print_wrapped(screen, y, 2, "(Press any key to return)", max_x - 4)
 
     screen.refresh()
     screen.getch()
+
 
 def view_bytes_packets_info(screen):
     """
@@ -1591,7 +1803,13 @@ def view_bytes_packets_info(screen):
     screen.clear()
     screen.border(0)
     max_y, max_x = screen.getmaxyx()
-    print_wrapped(screen, 1, 2, "Interface Traffic Statistics (Press any key to return)", max_x - 4)
+    print_wrapped(
+        screen,
+        1,
+        2,
+        "Interface Traffic Statistics (Press any key to return)",
+        max_x - 4,
+    )
     y = 3
     for iface in interfaces:
         rx_b, rx_p, tx_b, tx_p = get_bytes_packets(iface)
@@ -1602,6 +1820,7 @@ def view_bytes_packets_info(screen):
             break
     screen.refresh()
     screen.getch()
+
 
 def view_realtime_bandwidth(screen):
     """
@@ -1622,12 +1841,14 @@ def view_realtime_bandwidth(screen):
         while True:
             # Check if user pressed 'q'
             c = screen.getch()
-            if c == ord('q') or c == ord('Q'):
+            if c == ord("q") or c == ord("Q"):
                 break
 
             screen.clear()
             screen.border(0)
-            print_wrapped(screen, 1, 2, "Real-time Bandwidth (press 'q' to quit)", max_x - 4)
+            print_wrapped(
+                screen, 1, 2, "Real-time Bandwidth (press 'q' to quit)", max_x - 4
+            )
             y = 3
 
             for iface in interfaces:
@@ -1655,6 +1876,7 @@ def view_realtime_bandwidth(screen):
     finally:
         screen.nodelay(False)
 
+
 def network_monitoring_menu(screen):
     """
     Phase 4: Network Monitoring TUI
@@ -1665,17 +1887,23 @@ def network_monitoring_menu(screen):
         "View Network Bandwidth in Real-time",
         "View Network Protocol Statistics (TCP/UDP)",
         "View Bytes/Packets for Interfaces",
-        "Back to Main Menu"
+        "Back to Main Menu",
     ]
     while True:
         screen.clear()
         screen.border(0)
         max_y, max_x = screen.getmaxyx()
-        print_wrapped(screen, 2, 2, "Network Monitoring Dashboard Menu (ESC to go back)", max_x - 4)
+        print_wrapped(
+            screen,
+            2,
+            2,
+            "Network Monitoring Dashboard Menu (ESC to go back)",
+            max_x - 4,
+        )
 
         for idx, opt in enumerate(options):
             prefix = "> " if idx == selected else "  "
-            print_wrapped(screen, 4+idx, 2, prefix + opt, max_x - 4)
+            print_wrapped(screen, 4 + idx, 2, prefix + opt, max_x - 4)
 
         key = screen.getch()
         if key == curses.KEY_UP and selected > 0:
@@ -1696,18 +1924,20 @@ def network_monitoring_menu(screen):
         elif key == 27:
             break
 
+
 ###############################
 # Main Menu (Phases 1 & 2 & 3 & 4)
 ###############################
+
 
 def main_menu(screen):
     selected = 0
     options = [
         "Network Configuration",  # Phase 1
-        "Nftables Management",    # Phase 2
-        "Open vSwitch Management",# Phase 3
-        "Network Monitoring",     # Phase 4 
-        "Exit"
+        "Nftables Management",  # Phase 2
+        "Open vSwitch Management",  # Phase 3
+        "Network Monitoring",  # Phase 4
+        "Exit",
     ]
     while True:
         screen.clear()
@@ -1716,7 +1946,7 @@ def main_menu(screen):
         print_wrapped(screen, 2, 2, "Main Menu (ESC to exit)", max_x - 4)
         for idx, opt in enumerate(options):
             prefix = "> " if idx == selected else "  "
-            print_wrapped(screen, 4+idx, 2, prefix + opt, max_x - 4)
+            print_wrapped(screen, 4 + idx, 2, prefix + opt, max_x - 4)
 
         key = screen.getch()
         if key == curses.KEY_UP and selected > 0:
@@ -1741,6 +1971,7 @@ def main_menu(screen):
         elif key == 27:  # ESC
             break
 
+
 def main(screen):
     if os.geteuid() != 0:
         screen.clear()
@@ -1749,5 +1980,6 @@ def main(screen):
         return
     main_menu(screen)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     curses.wrapper(main)
