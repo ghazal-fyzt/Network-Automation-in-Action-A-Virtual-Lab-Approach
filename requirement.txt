@@ -4,3 +4,4 @@ logging==0.4.9.6
 pytz==2024.2
 setuptools==75.6.0
 zope.interface==7.2
+windows-curses==2.4.0; platform_system == "Windows"
