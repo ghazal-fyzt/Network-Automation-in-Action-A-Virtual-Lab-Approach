@@ -1,10 +1,11 @@
 ![Logo](https://raw.githubusercontent.com/ghazal-fyzt/Network-Automation-in-Action-A-Virtual-Lab-Approach/main/Images/logo.png)
 
+
 # MyProject 🚀
 
-![Build Status](https://img.shields.io/github/workflow/status/ghazal-fyzt/Network-Automation-in-Action-A-Virtual-Lab-Approach/CI)
-![Python Version](https://img.shields.io/badge/python-3.8%2B-blue)
-![Last Commit](https://img.shields.io/github/last-commit/ghazal-fyzt/Network-Automation-in-Action-A-Virtual-Lab-Approach)
+![Build Status](https://img.shields.io/github/actions/workflow/status/ghazal-fyzt/Network-Automation-in-Action-A-Virtual-Lab-Approach/CI.yml?label=build&style=flat-square&color=orange)
+![Python Version](https://img.shields.io/badge/python-3.8%2B-darkyellow?style=flat-square)
+![Last Commit](https://img.shields.io/github/last-commit/ghazal-fyzt/Network-Automation-in-Action-A-Virtual-Lab-Approach?style=flat-square&color=red)
 
 ## Table of Contents
 - [Overview](#overview)
