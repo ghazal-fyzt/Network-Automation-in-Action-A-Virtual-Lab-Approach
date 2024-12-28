@@ -1,1 +1,9 @@
+#ignore Vscode generated files
 .vscode/
+
+#ignore venv generated files
+.venv
+
+#igonre InteliJ generated files
+.idea
+
